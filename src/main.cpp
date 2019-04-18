@@ -6,12 +6,15 @@
 #include <Ticker.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
-#include "..\..\Credentials.h"
+#include "..\..\Credentials.h"  // contains definitions of WIFI SSID and password
 
-#define BACKLIGHT_PIN 26
-#define LDR_PIN 34
-#define TONE_PIN 33
+#define BUTTON_LEFT_PIN    16
+#define BUTTON_RIGHT_PIN    17
+#define LDR_PIN         34
+
+#define BACKLIGHT_PIN   26
 #define BACKLIGHT_CHANNEL   0
+#define TONE_PIN        33
 #define TONE_CHANNEL    1
 
 
@@ -34,7 +37,6 @@ void BlankDisplay()
 {
     lastTimeShown = "88 88";    // so that the clock is re-rendered
     tft.fillScreen(TFT_BLACK);
-    tft.setTextSize(1);
 }
 //------------------------------------------------------------------------
 void CheckTime()
@@ -64,6 +66,8 @@ void CheckTime()
     flash = (flash == false);
     tft.fillCircle(120, 20, 3, flash ? 0xFBE0 : TFT_BLACK);
     tft.fillCircle(120, 50, 3, flash ? 0xFBE0 : TFT_BLACK);
+
+    tft.setTextSize(1); // reset the text size
 }
 //------------------------------------------------------------------------
 void CheckLDR()
@@ -71,8 +75,8 @@ void CheckLDR()
     uint16_t ldr = analogRead(LDR_PIN);
 
     // adjust the brightness of the backlight
-    int val = 250.0 / 4095.0 * (4095 - ldr);
-    ledcWrite(BACKLIGHT_CHANNEL, 5 + val);
+    int val = 254.0 / 4095.0 * (4095 - ldr);
+    ledcWrite(BACKLIGHT_CHANNEL, 1 + val);
 }
 
 //------------------------------------------------------------------------
@@ -122,6 +126,7 @@ void CheckWeather()
 
     // update display
     BlankDisplay();
+    CheckTime();    // re-display the clock
 
     JsonObject main = jsonDoc["main"];   
     JsonObject weather = jsonDoc["weather"][0];
@@ -157,12 +162,32 @@ void CheckWeather()
 }
 
 //------------------------------------------------------------------------
+void IRAM_ATTR left_button()
+{
+    if(digitalRead(BUTTON_LEFT_PIN))
+        tft.drawCircle(235,230,5, TFT_WHITE);
+    else
+        tft.drawCircle(235,230,5, TFT_BLACK);
+}
+//------------------------------------------------------------------------
+void IRAM_ATTR right_button()
+{
+    if(digitalRead(BUTTON_RIGHT_PIN))
+        tft.drawCircle(230,230,5, TFT_WHITE);
+    else
+        tft.drawCircle(230,230,5, TFT_BLACK);
+}
+//------------------------------------------------------------------------
 void setup(void)
 {
     Serial.begin(115200);
 
     // set pins
     pinMode(LDR_PIN, INPUT);
+    pinMode(BUTTON_RIGHT_PIN, INPUT);
+    attachInterrupt(digitalPinToInterrupt(BUTTON_RIGHT_PIN), right_button, CHANGE);
+    pinMode(BUTTON_LEFT_PIN, INPUT);
+    attachInterrupt(digitalPinToInterrupt(BUTTON_LEFT_PIN), left_button, CHANGE);
 
     // init the TFT Display
     tft.init();
@@ -201,7 +226,7 @@ void setup(void)
     // setup the timers
     clockTimer.attach(0.5, CheckTime);
     ldrTimer.attach(1, CheckLDR);
-    weatherTimer.attach(120, CheckWeather);
+    weatherTimer.attach(300, CheckWeather); // every 5 mins
 
     CheckWeather(); // update the weather info
 }
