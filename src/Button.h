@@ -32,10 +32,10 @@ public:
         if (_pressed)
         {
             // check for long press
-            if( millis() - _start > 1000)
+            if( millis() - _start > 750)
             {
                 _pressed = false;
-                Beep(2700, 100);
+                Beep(2700, 50);
                 return TButtonEvent::LONG_PRESS;
             }
         }
@@ -45,7 +45,7 @@ public:
             _released = false;
             if( _pressed )
             {
-                Beep(2700, 50);
+                Beep(2700, 5);
                 _pressed = false;
                 return TButtonEvent::PRESS;
             }
