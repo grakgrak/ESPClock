@@ -4,36 +4,32 @@
 
 // BackSpace, Shift, Ok
 //const char *keys = "0123456789 aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ";
-const char *keys[] = {
-    "0123456789abcdefghijklmnopqrstuvwxyz ",
-    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ ",
-    ",.:;%^&(){}[]_*-+=\\|/<>?~!@"};
+ const char *keys[] = {
+     "0123456789abcdefghijklmnopqrstuvwxyz ",
+     "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ ",
+     ",.:;%^&(){}[]_*-+=\\|/<>?~!@"};
 
 #define COL_WIDTH 24
 #define ROW_HEIGHT 30
 #define COL_COUNT 10
 #define ROW_COUNT 7
-
-int charSet;
-int cursorIdx;
-bool rowSelectMode;
+#define EXTRA   3
+int charSet = 0;
+int cursorIdx = 0;
+int maxKeys = 0;
 String result;
-//------------------------------------------------------------------------
-void KeyboardDisplay::setup()
-{
-}
 
 //------------------------------------------------------------------------
 void KeyboardDisplay::start()
 {
-    TDisplay::BlankArea(0, TFT_HEIGHT);
+    Display::BlankArea(0, TFT_HEIGHT);
 
     charSet = 0;
     cursorIdx = 0;
-    rowSelectMode = true;
+    maxKeys = strlen(keys[charSet]) + EXTRA;
     result = "";
 
-    DrawKeyboard(0,0);
+    DrawKeyboard();
 }
 
 //------------------------------------------------------------------------
@@ -43,93 +39,87 @@ void KeyboardDisplay::stop()
 //------------------------------------------------------------------------
 bool KeyboardDisplay::keypress(TButtonEvent left, TButtonEvent right)
 {
-    int r = cursorIdx / COL_COUNT;
-    int c = cursorIdx % COL_COUNT;
-
     if (left == TButtonEvent::PRESS)
     {
-        if (rowSelectMode)
-        {
-            if (r > 0)
-                --r;
-        }
-        else if (c > 0)
-            --c;
+        if (cursorIdx > 0)
+            --cursorIdx;
+        else
+            cursorIdx = maxKeys - 1;
 
-        DrawKeyboard(r, c);
-        return true;
-    }
-
-    if (left == TButtonEvent::LONG_PRESS)
-    {
-        rowSelectMode = (rowSelectMode == false);
-
-        DrawKeyboard(r, c);
-        return true;
-    }
-
-    if (right == TButtonEvent::LONG_PRESS)
-    {
-        result = result + String(keys[0][cursorIdx]);
-        DrawKeyboard(r, c);
+        DrawKeyboard();
         return true;
     }
 
     if (right == TButtonEvent::PRESS)
     {
-        if (rowSelectMode)
-        {
-            if (r < ROW_COUNT - 1)
-                ++r;
-        }
-        else if (c < COL_COUNT - 1)
-            ++c;
+        if (cursorIdx < maxKeys - 1 )   // allow for the extra buttons
+            ++cursorIdx;
+        else
+            cursorIdx = 0;
+        
 
-        DrawKeyboard(r, c);
+        DrawKeyboard();
         return true;
     }
+
+    if (left == TButtonEvent::LONG_PRESS || right == TButtonEvent::LONG_PRESS)
+    {
+        if( cursorIdx < maxKeys - EXTRA)
+            result = result + String(keys[charSet][cursorIdx]);
+
+        if(cursorIdx == maxKeys - EXTRA)
+        {
+            charSet = (charSet + 1) % 3;
+            maxKeys = strlen(keys[charSet]);
+            cursorIdx = maxKeys - EXTRA;
+            Display::BlankArea(0, TFT_HEIGHT);
+        }
+
+        if(cursorIdx == maxKeys - EXTRA + 1)
+            result = result.substring(0, result.length() - 1);
+
+        if(cursorIdx == maxKeys - EXTRA + 2)
+            return false;
+
+        DrawKeyboard();
+        return true;
+    }
+
     return false;
 }
 
 //------------------------------------------------------------------------
-void KeyboardDisplay::DrawKeyboard(int r, int c)
+void KeyboardDisplay::DrawKeyboard()
 {
     tft.setTextSize(1);
     tft.setTextColor(TFT_WHITE, TFT_BLACK);
     tft.setTextDatum(TL_DATUM); // top left
 
     // adjust cursorIdx so that it is valid
-    cursorIdx = r * COL_COUNT + c;
-    if (cursorIdx >= strlen(keys[0]))
-        cursorIdx = strlen(keys[0]) - 1;
-
     // render the keyboard
     for (int r = 0; r < ROW_COUNT; r++)
         for (int c = 0; c < COL_COUNT; c++)
         {
             int idx = r * COL_COUNT + c;
-            if (idx >= strlen(keys[0]))
+            if (idx >= maxKeys - EXTRA)
                 break;
 
             int background = TFT_BLACK;
-            if (rowSelectMode)
-            {
-                if (r == cursorIdx / COL_COUNT)
-                    background = TFT_RED;
-            }
-            else
-            {
-                if (idx == cursorIdx)
-                    background = TFT_RED;
-            }
+            if (idx == cursorIdx)
+                background = TFT_RED;
 
             tft.setTextColor(TFT_WHITE, background);
-            tft.drawChar(keys[0][idx], c * COL_WIDTH, r * ROW_HEIGHT, 4);
+            tft.drawChar(keys[charSet][idx], c * COL_WIDTH, r * ROW_HEIGHT, 4);
         }
 
-    tft.drawString(result, 0, TFT_HEIGHT - ROW_HEIGHT * 2, 4);
+    tft.setTextColor(TFT_GREENYELLOW, TFT_BLACK);
+    tft.fillRect(0,TFT_HEIGHT - ROW_HEIGHT * 3, TFT_WIDTH, ROW_HEIGHT, TFT_BLACK);
+    tft.drawString(result, 0, TFT_HEIGHT - ROW_HEIGHT * 3, 4);
 
+    tft.setTextColor(TFT_WHITE, (cursorIdx == maxKeys - EXTRA) ? TFT_RED : TFT_BLACK);
     tft.drawString("Shift", 0, TFT_HEIGHT - ROW_HEIGHT, 4);
+    tft.setTextColor(TFT_WHITE, (cursorIdx == maxKeys - EXTRA + 1) ? TFT_RED : TFT_BLACK);
     tft.drawString("BSpace", 80, TFT_HEIGHT - ROW_HEIGHT, 4);
+    tft.setTextColor(TFT_WHITE, (cursorIdx == maxKeys - EXTRA + 2) ? TFT_RED : TFT_BLACK);
     tft.drawString("Ok", 190, TFT_HEIGHT - ROW_HEIGHT, 4);
 }

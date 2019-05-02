@@ -7,6 +7,8 @@
 #include "Button.h"
 #include "Comms.h"
 #include "Display.h"
+#include "AlarmDisplay.h"
+#include "WeatherDisplay.h"
 
 #define TONE_CHANNEL 1
 #define TONE_FREQ 2700
@@ -20,13 +22,13 @@ TButton Left(BUTTON_LEFT_PIN, []() -> void IRAM_ATTR { Left.HandleEvent(); });
 void log(const String &msg)
 {
     Serial.print(msg);
-    PublishTopic("ESPClock/Log", false, msg.c_str());
+    //Comms::PublishTopic("ESPClock/Log", false, msg.c_str());
 }
 //------------------------------------------------------------------------
 void logln(const String &msg)
 {
     Serial.println(msg);
-    PublishTopic("ESPClock/Log", false, msg.c_str());
+    //Comms::PublishTopic("ESPClock/Log", false, msg.c_str());
 }
 
 //------------------------------------------------------------------------
@@ -46,24 +48,21 @@ void Beep(int freq, int ms)
 //------------------------------------------------------------------------
 void HandleMqttMessage(const char *topic, const char *payload)
 {
-    // check for a command to set the alarm
-    for (int i = 0; i < MAX_ALARMS; ++i)
-    {
-        String tmp = "ESPClock/Set/Alarm" + String(i);
-        if (strcmp(tmp.c_str(), topic) == 0)
-        {
-            Alarms[i].JsonUpdate(payload);
-            return;
-        }
-    }
+    AlarmDisplay::HandleMqttMessage(topic, payload);
+    WeatherDisplay::HandleMqttMessage(topic, payload);
 }
-
+//------------------------------------------------------------------------
+void AddMqttSubscribeTopics()
+{
+    AlarmDisplay::AddMqttSubscribeTopics();
+    WeatherDisplay::AddMqttSubscribeTopics();
+}
 //------------------------------------------------------------------------
 void setup(void)
 {
     Serial.begin(115200);
 
-    TComms::setup();
+    Comms::setup();
 
     // Init Beeper
     ledcSetup(TONE_CHANNEL, TONE_FREQ, 8);
@@ -72,7 +71,7 @@ void setup(void)
     delay(75);
     Beep(TONE_FREQ, 75);
 
-    TDisplay::setup();
+    Display::setup();
 }
 //------------------------------------------------------------------------
 void loop()
@@ -80,11 +79,9 @@ void loop()
     TButtonEvent leftBtn = Left.Check();
     TButtonEvent rightBtn = Right.Check();
 
-    // allow the alarms to check for a cancel button
-    for (int idx = 0; idx < 10; idx++)
-        Alarms[idx].Check(leftBtn, rightBtn);
+    AlarmDisplay::Check(leftBtn, rightBtn);
 
-    TDisplay::HandleKeys(leftBtn, rightBtn);
+    Display::HandleKeys(leftBtn, rightBtn);
 
     delay(10);
 }

@@ -1,11 +1,8 @@
 #pragma once
 
-
-class TComms
+namespace Comms
 {
-public:
-    static void setup();
-
-    void PublishTopic( const String &topic, bool retain, const char *payload);
-
-};
+void setup();
+void PublishTopic(const String &topic, bool retain, const char *payload);
+void SubscribeTopic(const String &topic);
+} // namespace Comms

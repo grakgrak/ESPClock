@@ -1,8 +1,8 @@
 #include "Shared.h"
 #include "Alarm.h"
-
-//------------------------------------------------------------------------
-TAlarm Alarms[MAX_ALARMS];
+#include "AlarmDisplay.h"
+#include "ClockDisplay.h"
+#include "Comms.h"
 
 //-------------------------------------------------------------
 String TAlarm::toString()
@@ -81,7 +81,7 @@ void TAlarm::JsonUpdate(const char *payload)
 bool TAlarm::Check(TButtonEvent left, TButtonEvent right)
 {
     unsigned alarmMinutes = _hour * 60 + _minute;
-    unsigned nowMinutes = timeClient.getHours() * 60 + timeClient.getMinutes();
+    unsigned nowMinutes = ClockDisplay::getHours() * 60 + ClockDisplay::getMinutes();
 
     switch (_state)
     {
@@ -89,7 +89,7 @@ bool TAlarm::Check(TButtonEvent left, TButtonEvent right)
         break;
     case AlarmState::WAITING:
         //check we are once only or on a valid day
-        if (_days == "0000000" || _days[timeClient.getDay()] == '1')
+        if (_days == "0000000" || _days[ClockDisplay::getDay()] == '1')
             if (nowMinutes == alarmMinutes)
                 _state = AlarmState::FIRED;
         break;
@@ -105,7 +105,7 @@ bool TAlarm::Check(TButtonEvent left, TButtonEvent right)
         if (_days == "0000000") // only fire once
         {
             _state = AlarmState::INACTIVE;
-            PublishTopic("ESPClock/Set/Alarm" + String(_index), false, NULL);   // delete the retained topic
+            Comms::PublishTopic("ESPClock/Set/Alarm" + String(_index), false, NULL);   // delete the retained topic
         }
         else if (nowMinutes != alarmMinutes)
             _state = AlarmState::WAITING;

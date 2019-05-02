@@ -1,6 +1,8 @@
 #include "Shared.h"
 #include "ClockDisplay.h"
 
+namespace ClockDisplay
+{
 //------------------------------------------------------------------------
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", 3600, 60000);
@@ -9,38 +11,17 @@ String lastTimeShown = "88 88";
 Ticker clockTimer;
 
 //------------------------------------------------------------------------
-void ClockDisplay::start()
-{
-    logln("start ClockDisplay");
-    // setup the timers
-    clockTimer.attach(0.5, DrawTime);
-
-    BlankDisplay();
-    DrawTime();
-}
-//------------------------------------------------------------------------
-void ClockDisplay::stop()
-{
-    logln("stop ClockDisplay");
-    clockTimer.detach();
-}
-//------------------------------------------------------------------------
-void ClockDisplay::setup()
-{
-}
-
-//------------------------------------------------------------------------
-void ClockDisplay::BlankDisplay()
+void BlankDisplay()
 {
     lastTimeShown = "88 88"; // so that the clock is re-rendered
     tft.fillScreen(TFT_BLACK);
 }
 //------------------------------------------------------------------------
-void ClockDisplay::DrawTime()
+void DrawTime()
 {
     static bool flash = false;
 
-    if(WiFi.isConnected() == false)
+    if (WiFi.isConnected() == false)
         return;
 
     timeClient.update();
@@ -66,4 +47,36 @@ void ClockDisplay::DrawTime()
     tft.fillCircle(120, 20, 4, flash ? 0xFBE0 : TFT_BLACK);
     tft.fillCircle(120, 50, 4, flash ? 0xFBE0 : TFT_BLACK);
 }
+//------------------------------------------------------------------------
+int getHours()
+{
+    return timeClient.getHours();
+}
+//------------------------------------------------------------------------
+int getMinutes()
+{
+    return timeClient.getMinutes();
+}
+//------------------------------------------------------------------------
+int getDay()
+{
+    return timeClient.getDay();
+}
+//------------------------------------------------------------------------
+void start()
+{
+    logln("start ClockDisplay");
+    // setup the timers
+    clockTimer.attach(0.5, DrawTime);
 
+    BlankDisplay();
+    DrawTime();
+}
+//------------------------------------------------------------------------
+void stop()
+{
+    logln("stop ClockDisplay");
+    clockTimer.detach();
+}
+
+} // namespace ClockDisplay

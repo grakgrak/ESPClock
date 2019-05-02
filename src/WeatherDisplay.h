@@ -1,12 +1,11 @@
 #pragma once
 
-class WeatherDisplay
+namespace WeatherDisplay
 {
-private:
-    static void FetchWeather();
-    static void DrawWeather();
-public:
-    static void setup();
-    static void start();
-    static void stop();
-};
+void start();
+void stop();
+
+void AddMqttSubscribeTopics();
+void HandleMqttMessage(const char *topic, const char *payload);
+void HandleKeys(TButtonEvent left, TButtonEvent right);
+} // namespace WeatherDisplay

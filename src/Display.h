@@ -9,16 +9,9 @@ enum TScreenName
     KEYBOARD_SCREEN
 };
 
-class TDisplay
+namespace Display
 {
-private:
-    static void ShowScreen(TScreenName screen);
-    static void ShowNextScreen();
-    static void ShowPriorScreen();
-public:
-    static void BlankArea( int top, int bottom);
-
-    static void HandleKeys(TButtonEvent left, TButtonEvent right);
-
-    static void setup();
-};
+void BlankArea(int top, int bottom);
+void HandleKeys(TButtonEvent left, TButtonEvent right);
+void setup();
+} // namespace Display

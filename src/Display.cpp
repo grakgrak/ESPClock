@@ -5,12 +5,14 @@
 #include "KeyboardDisplay.h"
 #include "WeatherDisplay.h"
 
-#define BACKLIGHT_CHANNEL 0
-//------------------------------------------------------------------------
 TFT_eSPI tft = TFT_eSPI(); // Invoke library, pins defined in User_Setup.h
 
-Ticker ldrTimer;
+namespace Display
+{
+#define BACKLIGHT_CHANNEL 0
 
+//------------------------------------------------------------------------
+Ticker ldrTimer;
 TScreenName currentScreen = TScreenName::NONE;
 
 //------------------------------------------------------------------------
@@ -24,13 +26,13 @@ void CheckLDR()
 }
 
 //------------------------------------------------------------------------
-void TDisplay::BlankArea( int top, int bottom)
+void BlankArea(int top, int bottom)
 {
     tft.fillRect(0, top, TFT_WIDTH, bottom - top, TFT_BLACK);
 }
 
 //------------------------------------------------------------------------
-void TDisplay::ShowScreen(TScreenName screen)
+void ShowScreen(TScreenName screen)
 {
     if (screen == currentScreen)
         return;
@@ -57,15 +59,15 @@ void TDisplay::ShowScreen(TScreenName screen)
     switch (screen)
     {
     case TScreenName::ALARM_SCREEN:
-        ClockDisplay::start();  // display the clock 
+        ClockDisplay::start(); // display the clock
         AlarmDisplay::start();
         break;
     case TScreenName::WEATHER_SCREEN:
-        ClockDisplay::start();  // display the clock 
+        ClockDisplay::start(); // display the clock
         WeatherDisplay::start();
         break;
     case TScreenName::KEYBOARD_SCREEN:
-        ClockDisplay::stop();  // Hide the clock 
+        ClockDisplay::stop(); // Hide the clock
         KeyboardDisplay::start();
         break;
     case TScreenName::NONE:
@@ -75,7 +77,7 @@ void TDisplay::ShowScreen(TScreenName screen)
     }
 }
 //------------------------------------------------------------------------
-void TDisplay::ShowNextScreen()
+void ShowNextScreen()
 {
     TScreenName next = TScreenName::WEATHER_SCREEN; // default to the weather screen
     switch (currentScreen)
@@ -84,7 +86,7 @@ void TDisplay::ShowNextScreen()
         next = TScreenName::WEATHER_SCREEN;
         break;
     case TScreenName::WEATHER_SCREEN:
-        next = TScreenName::KEYBOARD_SCREEN;
+        next = TScreenName::ALARM_SCREEN;
         break;
     case TScreenName::KEYBOARD_SCREEN:
         next = TScreenName::ALARM_SCREEN;
@@ -95,14 +97,14 @@ void TDisplay::ShowNextScreen()
     ShowScreen(next);
 }
 //------------------------------------------------------------------------
-void TDisplay::ShowPriorScreen()
+void ShowPriorScreen()
 {
     TScreenName next = TScreenName::WEATHER_SCREEN; // default to the weather screen
 
     switch (currentScreen)
     {
     case TScreenName::ALARM_SCREEN:
-        next = TScreenName::KEYBOARD_SCREEN;
+        next = TScreenName::WEATHER_SCREEN;
         break;
     case TScreenName::WEATHER_SCREEN:
         next = TScreenName::ALARM_SCREEN;
@@ -116,7 +118,37 @@ void TDisplay::ShowPriorScreen()
     ShowScreen(next);
 }
 //------------------------------------------------------------------------
-void TDisplay::setup()
+void HandleKeys(TButtonEvent left, TButtonEvent right)
+{
+    switch (currentScreen)
+    {
+    case TScreenName::ALARM_SCREEN:
+        break;
+    case TScreenName::WEATHER_SCREEN:
+        WeatherDisplay::HandleKeys(left,right);
+        break;
+    case TScreenName::KEYBOARD_SCREEN:
+        if (KeyboardDisplay::keypress(left, right))
+            return;
+        break;
+    default:
+        break;
+    }
+
+    if (left == TButtonEvent::LONG_PRESS && right == TButtonEvent::LONG_PRESS)
+        ShowScreen(TScreenName::KEYBOARD_SCREEN);
+    else
+    {
+        // switch screens on logn button press
+        if (left == TButtonEvent::LONG_PRESS)
+            ShowPriorScreen();
+
+        if (right == TButtonEvent::LONG_PRESS)
+            ShowNextScreen();
+    }
+}
+//------------------------------------------------------------------------
+void setup()
 {
     // set pins
     pinMode(LDR_PIN, INPUT);
@@ -136,33 +168,6 @@ void TDisplay::setup()
     // setup the display brightness
     ldrTimer.attach(1, CheckLDR);
 
-    AlarmDisplay::setup();
-    ClockDisplay::setup();
-    WeatherDisplay::setup();
-
-    ShowScreen(TScreenName::ALARM_SCREEN);
+    ShowScreen(TScreenName::WEATHER_SCREEN);
 }
-//------------------------------------------------------------------------
-void TDisplay::HandleKeys(TButtonEvent left, TButtonEvent right)
-{
-    switch (currentScreen)
-    {
-    case TScreenName::ALARM_SCREEN:
-        break;
-    case TScreenName::WEATHER_SCREEN:
-        break;
-    case TScreenName::KEYBOARD_SCREEN:
-        if( KeyboardDisplay::keypress(left,right))
-            return;
-        break;
-    default:
-        break;
-    }
-
-    // switch screens on logn button press
-    if (left == TButtonEvent::LONG_PRESS)
-        TDisplay::ShowPriorScreen();
-
-    if (right == TButtonEvent::LONG_PRESS)
-        TDisplay::ShowNextScreen();
-}
+} // namespace Display

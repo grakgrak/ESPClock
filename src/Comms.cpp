@@ -2,8 +2,12 @@
 #include "Comms.h"
 #include "..\..\Credentials.h" // contains definitions of WIFI SSID and password
 
+namespace Comms
+{
+
 #define MQTT_PORT 1883
 #define MQTT_HOST IPAddress(192, 168, 1, 210)
+#define MQTT_MAX_PACKET_SIZE 100
 
 #define PUBLISH_FREQ_SECS 60
 
@@ -15,12 +19,7 @@ const char *password = WIFI_PASSWORD;
 AsyncMqttClient mqttClient;
 
 Ticker mqttReconnectTimer;
-Ticker mqttPublishTimer;
 Ticker wifiReconnectTimer;
-
-String gPressure;
-String gHumidity;
-String gTemperature;
 //------------------------------------------------------------------------
 void connectToWifi()
 {
@@ -36,35 +35,22 @@ void connectToMqtt()
 }
 
 //------------------------------------------------------------------------
-void publishSensorValue()
-{
-    if (gTemperature.length() > 0)
-        mqttClient.publish("ESPClock/Temp/value", 0, true, gTemperature.c_str());
-    if (gHumidity.length() > 0)
-        mqttClient.publish("ESPClock/Humidity/value", 0, true, gHumidity.c_str());
-    if (gPressure.length() > 0)
-        mqttClient.publish("ESPClock/Pressure/value", 0, true, gPressure.c_str());
-}
-//------------------------------------------------------------------------
-void PublishTopic( const String &topic, bool retain, const char *payload)
+void PublishTopic(const String &topic, bool retain, const char *payload)
 {
     mqttClient.publish(topic.c_str(), 0, retain, payload);
 }
 
 //------------------------------------------------------------------------
+void SubscribeTopic(const String &topic)
+{
+    mqttClient.subscribe(topic.c_str(), 0);
+}
+//------------------------------------------------------------------------
 void onMqttConnect(bool sessionPresent)
 {
     logln("Connected to MQTT.");
 
-    // attach the publisher
-    mqttPublishTimer.attach(PUBLISH_FREQ_SECS, publishSensorValue);
-
-    // subscribe to the alarm topics
-    for (int i = 0; i < MAX_ALARMS; ++i)
-    {
-        String tmp = "ESPClock/Set/Alarm" + String(i);
-        mqttClient.subscribe(tmp.c_str(), 0);
-    }
+    AddMqttSubscribeTopics();   // tell everyone to add their subscriptions
 }
 
 //------------------------------------------------------------------------
@@ -72,15 +58,19 @@ void onMqttDisconnect(AsyncMqttClientDisconnectReason reason)
 {
     logln("Disconnected from MQTT.");
 
-    mqttPublishTimer.detach(); // stop publishing
-
     if (WiFi.isConnected())
         mqttReconnectTimer.once(2, connectToMqtt);
 }
+
 //------------------------------------------------------------------------
 void onMqttMessage(char *topic, char *payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total)
 {
-    HandleMqttMessage(topic, payload);
+    char value[MQTT_MAX_PACKET_SIZE + 1];
+
+    memcpy((void *)value, (const void *)payload, len);
+    value[len] = '\0';
+
+    HandleMqttMessage(topic, value);
 }
 //------------------------------------------------------------------------
 void init_mqtt()
@@ -140,9 +130,10 @@ void WiFiEvent(WiFiEvent_t event)
 }
 
 //------------------------------------------------------------------------
-void TComms::setup()
+void setup()
 {
     WiFi.onEvent(WiFiEvent);
     init_mqtt();
     connectToWifi();
 }
+} // namespace Comms

@@ -1,12 +1,11 @@
 #pragma once
 
-class ClockDisplay
+namespace ClockDisplay
 {
-private:
-    static void BlankDisplay();
-    static void DrawTime();
-public:  
-    static void setup();
-    static void start();
-    static void stop();
-};
+int getHours();
+int getMinutes();
+int getDay();
+
+void start();
+void stop();
+}   //namespace ClockDisplay

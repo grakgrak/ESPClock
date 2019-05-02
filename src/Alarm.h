@@ -4,7 +4,6 @@
 #include <NTPClient.h>
 #include "Button.h"
 
-extern NTPClient timeClient;
 extern void Beep(int freq, int ms);
 
 //-------------------------------------------------------------
