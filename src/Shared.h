@@ -3,8 +3,6 @@
 #include <TFT_eSPI.h> // Graphics and font library for ST7735 driver chip
 #include <Ticker.h>
 #include <WiFi.h>
-#include <WiFiUdp.h>
-#include <NTPClient.h>
 #include <ArduinoJson.h>
 #include <AsyncMqttClient.h>
 #include "Display.h"
@@ -24,8 +22,7 @@
 #define LINE_HEIGHT 30
 
 //------------------------------------------------------------------------
-extern TFT_eSPI tft;
-
+// common routines in main.cpp
 extern void log(const String &msg);
 extern void logln(const String &msg);
 extern void HandleMqttMessage(const char *topic, const char *payload);

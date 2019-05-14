@@ -1,7 +1,7 @@
 #include "Shared.h"
 #include "Alarm.h"
 #include "AlarmDisplay.h"
-#include "ClockDisplay.h"
+#include "Clock.h"
 #include "Comms.h"
 
 //-------------------------------------------------------------
@@ -81,7 +81,7 @@ void TAlarm::JsonUpdate(const char *payload)
 bool TAlarm::Check(TButtonEvent left, TButtonEvent right)
 {
     unsigned alarmMinutes = _hour * 60 + _minute;
-    unsigned nowMinutes = ClockDisplay::getHours() * 60 + ClockDisplay::getMinutes();
+    unsigned nowMinutes = Clock::getHours() * 60 + Clock::getMinutes();
 
     switch (_state)
     {
@@ -89,7 +89,7 @@ bool TAlarm::Check(TButtonEvent left, TButtonEvent right)
         break;
     case AlarmState::WAITING:
         //check we are once only or on a valid day
-        if (_days == "0000000" || _days[ClockDisplay::getDay()] == '1')
+        if (_days == "0000000" || _days[Clock::getDay()] == '1')
             if (nowMinutes == alarmMinutes)
                 _state = AlarmState::FIRED;
         break;

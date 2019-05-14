@@ -91,6 +91,8 @@ bool KeyboardDisplay::keypress(TButtonEvent left, TButtonEvent right)
 //------------------------------------------------------------------------
 void KeyboardDisplay::DrawKeyboard()
 {
+    auto tft = Display::Lock();
+
     tft.setTextSize(1);
     tft.setTextColor(TFT_WHITE, TFT_BLACK);
     tft.setTextDatum(TL_DATUM); // top left
@@ -122,4 +124,6 @@ void KeyboardDisplay::DrawKeyboard()
     tft.drawString("BSpace", 80, TFT_HEIGHT - ROW_HEIGHT, 4);
     tft.setTextColor(TFT_WHITE, (cursorIdx == maxKeys - EXTRA + 2) ? TFT_RED : TFT_BLACK);
     tft.drawString("Ok", 190, TFT_HEIGHT - ROW_HEIGHT, 4);
+
+    Display::Release();
 }

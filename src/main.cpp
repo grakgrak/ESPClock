@@ -9,6 +9,7 @@
 #include "Display.h"
 #include "AlarmDisplay.h"
 #include "WeatherDisplay.h"
+#include "Clock.h"
 
 #define TONE_CHANNEL 1
 #define TONE_FREQ 2700
@@ -63,6 +64,7 @@ void setup(void)
     Serial.begin(115200);
 
     Comms::setup();
+    Clock::setup();
 
     // Init Beeper
     ledcSetup(TONE_CHANNEL, TONE_FREQ, 8);

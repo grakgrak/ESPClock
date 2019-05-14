@@ -1,6 +1,6 @@
 #include "Shared.h"
 #include "Comms.h"
-#include "..\..\Credentials.h" // contains definitions of WIFI SSID and password
+#include "..\..\Credentials.h" // contains definitions of WIFI_SSID and WIFI_PASSWORD
 
 namespace Comms
 {
@@ -8,8 +8,6 @@ namespace Comms
 #define MQTT_PORT 1883
 #define MQTT_HOST IPAddress(192, 168, 1, 210)
 #define MQTT_MAX_PACKET_SIZE 100
-
-#define PUBLISH_FREQ_SECS 60
 
 #define HOSTNAME "ESPClock"
 const char *ssid = WIFI_SSID;

@@ -1,21 +1,14 @@
 #include "Shared.h"
 #include "ClockDisplay.h"
+#include "Clock.h"
 
 namespace ClockDisplay
 {
-//------------------------------------------------------------------------
-WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", 3600, 60000);
 
+//------------------------------------------------------------------------
 String lastTimeShown = "88 88";
 Ticker clockTimer;
 
-//------------------------------------------------------------------------
-void BlankDisplay()
-{
-    lastTimeShown = "88 88"; // so that the clock is re-rendered
-    tft.fillScreen(TFT_BLACK);
-}
 //------------------------------------------------------------------------
 void DrawTime()
 {
@@ -24,14 +17,17 @@ void DrawTime()
     if (WiFi.isConnected() == false)
         return;
 
-    timeClient.update();
+    if( Clock::update() == false )
+        return;
 
-    String hours(timeClient.getHours());
-    String mins(timeClient.getMinutes());
+    String hours(Clock::getHours());
+    String mins(Clock::getMinutes());
     if (hours.length() == 1)
         hours = "0" + hours;
     if (mins.length() == 1)
         mins = "0" + mins;
+
+    auto tft = Display::Lock();
 
     String tm = hours + " " + mins;
     if (tm != lastTimeShown)
@@ -46,21 +42,8 @@ void DrawTime()
     flash = (flash == false);
     tft.fillCircle(120, 20, 4, flash ? 0xFBE0 : TFT_BLACK);
     tft.fillCircle(120, 50, 4, flash ? 0xFBE0 : TFT_BLACK);
-}
-//------------------------------------------------------------------------
-int getHours()
-{
-    return timeClient.getHours();
-}
-//------------------------------------------------------------------------
-int getMinutes()
-{
-    return timeClient.getMinutes();
-}
-//------------------------------------------------------------------------
-int getDay()
-{
-    return timeClient.getDay();
+
+    Display::Release();
 }
 //------------------------------------------------------------------------
 void start()
@@ -69,7 +52,7 @@ void start()
     // setup the timers
     clockTimer.attach(0.5, DrawTime);
 
-    BlankDisplay();
+    lastTimeShown = "88 88"; // so that the clock is re-rendered
     DrawTime();
 }
 //------------------------------------------------------------------------

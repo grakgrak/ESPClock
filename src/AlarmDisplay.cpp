@@ -40,6 +40,8 @@ void HandleMqttMessage(const char *topic, const char *payload)
 //------------------------------------------------------------------------
 void DrawAlarms()
 {
+    auto tft = Display::Lock();
+
     // blank the display area
     Display::BlankArea(CLOCK_HEIGHT, TFT_HEIGHT);
 
@@ -56,6 +58,8 @@ void DrawAlarms()
             int top = CLOCK_HEIGHT + (i * LINE_HEIGHT);
             Display::BlankArea(top, top + LINE_HEIGHT);
         }
+
+    Display::Release();
 }
 //------------------------------------------------------------------------
 void Check(TButtonEvent left, TButtonEvent right)

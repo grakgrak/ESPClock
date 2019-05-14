@@ -1,9 +1,8 @@
 #include "Shared.h"
 #include "Display.h"
 #include "WeatherDisplay.h"
+#include "Clock.h"
 #include "Comms.h"
-
-#define TOP CLOCK_HEIGHT
 
 namespace WeatherDisplay
 {
@@ -30,6 +29,8 @@ struct WeatherData
 //------------------------------------------------------------------------
 String getFormattedTime(unsigned long unixtime)
 {
+    unixtime += Clock::dstOffset(); // get the daylight savings time offset seconds....
+
     String hours((unixtime % 86400L) / 3600);
     if( hours.length() == 1)
         hours = "0" + hours;
@@ -107,9 +108,9 @@ String getMeteoconIcon(const String &icon)
     return ")";
 }
 //------------------------------------------------------------------------
-void DrawTagValue(const String &tag, const String &value, int line, const String &symbol)
+void DrawTagValue(TFT_eSPI &tft, const String &tag, const String &value, int line, const String &symbol)
 {
-    int y = TOP + (LINE_HEIGHT * line);
+    int y = CLOCK_HEIGHT + (LINE_HEIGHT * line);
     tft.setTextSize(1);
     tft.setTextDatum(TR_DATUM); // top right
     tft.drawString(tag, 115, y, 4);
@@ -118,14 +119,15 @@ void DrawTagValue(const String &tag, const String &value, int line, const String
     tft.drawString(value, 120, y, 4);
     if (symbol != "")
     {
+        int w = tft.textWidth(value,4);
         tft.setFreeFont(&Meteocons_Regular_26);
-        tft.drawString("*", 185, TOP - 4, 1); // deg C icon
+        tft.drawString("*", 120 + w, y - 4, 1); // deg C icon
     }
 }
 //------------------------------------------------------------------------
-void DrawLine(const String &text, int line)
+void DrawLine(TFT_eSPI &tft, const String &text, int line)
 {
-    int y = TOP + (LINE_HEIGHT * line);
+    int y = CLOCK_HEIGHT + (LINE_HEIGHT * line);
     tft.setTextSize(1);
     tft.setTextDatum(TL_DATUM); // top left
     tft.drawString(text, 6, y, 4);
@@ -133,21 +135,23 @@ void DrawLine(const String &text, int line)
 //------------------------------------------------------------------------
 void DrawWeather()
 {
+    auto tft = Display::Lock();
+
     // blank the display area
-    Display::BlankArea(TOP, TFT_HEIGHT);
+    Display::BlankArea(CLOCK_HEIGHT, TFT_HEIGHT);
 
     WeatherData &data = Data[DataIndex];
 
     if (PageIndex == 0)
     {
         tft.setTextColor(TFT_GREENYELLOW, TFT_BLACK);
-        DrawTagValue("Temp:", data.Temp, 0, "*");
-        DrawTagValue("Pressure:", data.Pressure + " hPa", 1, "");
-        DrawTagValue("Humidity:", data.Humidity + "%", 1, "");
+        DrawTagValue(tft, "Temp:", data.Temp, 0, "*");
+        DrawTagValue(tft, "Pressure:", data.Pressure + " hPa", 1, "");
+        DrawTagValue(tft, "Humidity:", data.Humidity + "%", 2, "");
 
         tft.setTextColor(TFT_CYAN, TFT_BLACK);
-        DrawLine(data.Condition + " " + data.Clouds + "%", 3);
-        DrawLine("(" + data.Detail + ")", 4);
+        DrawLine(tft, data.Condition + " " + data.Clouds + "%", 3);
+        DrawLine(tft, "(" + data.Detail + ")", 4);
 
         tft.setTextColor(TFT_WHITE, TFT_BLACK); // Note: the new fonts do not draw the background colour
         tft.setTextSize(2);
@@ -157,11 +161,12 @@ void DrawWeather()
     else
     {
         tft.setTextColor(TFT_GREENYELLOW, TFT_BLACK);
-        DrawTagValue("MinTemp:", data.MinTemp, 0, "*");
-        DrawTagValue("MaxTemp:", data.MaxTemp, 1, "*");
-        DrawTagValue("Sunrise:", getFormattedTime(atol(data.Sunrise.c_str())), 2, "");
-        DrawTagValue("Sunset:", getFormattedTime(atol(data.Sunset.c_str())), 3, "");
+        DrawTagValue(tft, "MinTemp:", data.MinTemp, 0, "*");
+        DrawTagValue(tft, "MaxTemp:", data.MaxTemp, 1, "*");
+        DrawTagValue(tft, "Sunrise:", getFormattedTime(atol(data.Sunrise.c_str())), 2, "");
+        DrawTagValue(tft, "Sunset:", getFormattedTime(atol(data.Sunset.c_str())), 3, "");
     }
+    Display::Release();
 }
 //------------------------------------------------------------------------
 void HandleKeys(TButtonEvent left, TButtonEvent right)

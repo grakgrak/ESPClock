@@ -5,15 +5,36 @@
 #include "KeyboardDisplay.h"
 #include "WeatherDisplay.h"
 
-TFT_eSPI tft = TFT_eSPI(); // Invoke library, pins defined in User_Setup.h
-
 namespace Display
 {
 #define BACKLIGHT_CHANNEL 0
 
+enum TScreenName
+{
+    NONE,
+    ALARM_SCREEN,
+    WEATHER_SCREEN,
+    KEYBOARD_SCREEN
+};
+
 //------------------------------------------------------------------------
+TFT_eSPI _tft = TFT_eSPI(); // Invoke library, pins defined in User_Setup.h
+SemaphoreHandle_t xSemaphore;
+
 Ticker ldrTimer;
 TScreenName currentScreen = TScreenName::NONE;
+
+//------------------------------------------------------------------------
+TFT_eSPI &Lock()
+{
+    xSemaphoreTakeRecursive(xSemaphore, 100);
+    return _tft;
+}
+//------------------------------------------------------------------------
+void Release()
+{
+    xSemaphoreGiveRecursive(xSemaphore);
+}
 
 //------------------------------------------------------------------------
 void CheckLDR()
@@ -28,7 +49,8 @@ void CheckLDR()
 //------------------------------------------------------------------------
 void BlankArea(int top, int bottom)
 {
-    tft.fillRect(0, top, TFT_WIDTH, bottom - top, TFT_BLACK);
+    Lock().fillRect(0, top, TFT_WIDTH, bottom - top, TFT_BLACK);
+    Release();
 }
 
 //------------------------------------------------------------------------
@@ -150,15 +172,16 @@ void HandleKeys(TButtonEvent left, TButtonEvent right)
 //------------------------------------------------------------------------
 void setup()
 {
+    xSemaphore = xSemaphoreCreateRecursiveMutex();
     // set pins
     pinMode(LDR_PIN, INPUT);
 
-    tft.init();
-    tft.setRotation(3);
+    _tft.init();
+    _tft.setRotation(3);
 
-    tft.setTextColor(TFT_BLUE, TFT_BLACK); // Note: the new fonts do not draw the background colour
-    tft.setTextFont(4);
-    tft.print("WiFi");
+    _tft.setTextColor(TFT_BLUE, TFT_BLACK); // Note: the new fonts do not draw the background colour
+    _tft.setTextFont(4);
+    _tft.print("WiFi");
 
     // init Backlight PWM
     ledcSetup(BACKLIGHT_CHANNEL, 4000, 8);
