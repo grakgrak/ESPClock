@@ -1,6 +1,7 @@
 #include "Shared.h"
 #include "Display.h"
 #include "WeatherDisplay.h"
+#include "../temp/Meteocons_26.h"
 #include "Clock.h"
 #include "Comms.h"
 

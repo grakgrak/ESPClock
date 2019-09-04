@@ -14,11 +14,27 @@ void DrawTime()
 {
     static bool flash = false;
 
+    auto tft = Display::Lock();
+
     if (WiFi.isConnected() == false)
+    {
+        tft.fillRect(0, 0, TFT_WIDTH, CLOCK_HEIGHT, TFT_BLACK);
+        tft.setTextColor(TFT_RED, TFT_BLACK);
+        tft.setTextSize(2);
+        tft.drawString("WiFi", 0, 0, 4);
+        Display::Release();
         return;
+    }
 
     if( Clock::update() == false )
+    {
+        tft.fillRect(0, 0, TFT_WIDTH, CLOCK_HEIGHT, TFT_BLACK);
+        tft.setTextColor(TFT_RED, TFT_BLACK);
+        tft.setTextSize(2);
+        tft.drawString("Clock", 0, 0, 4);
+        Display::Release();
         return;
+    }
 
     String hours(Clock::getHours());
     String mins(Clock::getMinutes());
@@ -27,14 +43,12 @@ void DrawTime()
     if (mins.length() == 1)
         mins = "0" + mins;
 
-    auto tft = Display::Lock();
-
     String tm = hours + " " + mins;
     if (tm != lastTimeShown)
     {
         lastTimeShown = tm;
 
-        tft.setTextColor(0xFBE0, TFT_BLACK); // Orange
+        tft.setTextColor(0xFBE0, TFT_BLACK); // Orange on Black
         tft.setTextSize(2);
         tft.drawString(tm, 0, 0, 6);
     }

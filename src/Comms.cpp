@@ -22,6 +22,7 @@ Ticker wifiReconnectTimer;
 void connectToWifi()
 {
     logln("Connecting to Wi-Fi...");
+    WiFi.mode(WIFI_MODE_STA);
     WiFi.begin(ssid, password);
 }
 
@@ -85,26 +86,27 @@ void init_mqtt()
 //------------------------------------------------------------------------
 void WiFiEvent(WiFiEvent_t event)
 {
-    logln("[WiFi-event] event: " + String(event));
     switch (event)
     {
-    case SYSTEM_EVENT_STA_GOT_IP:
+    case SYSTEM_EVENT_STA_GOT_IP:               /**< ESP32 station got IP from connected AP */
         logln("WiFi connected IP: " + WiFi.localIP().toString());
+        logln("Hostname: " + String(WiFi.getHostname()));
         connectToMqtt();
         break;
-    case SYSTEM_EVENT_STA_DISCONNECTED:
+    case SYSTEM_EVENT_STA_DISCONNECTED:         /**< ESP32 station disconnected from AP */
         logln("WiFi lost connection");
         mqttReconnectTimer.detach();
         wifiReconnectTimer.once(2, connectToWifi);
         break;
+    case SYSTEM_EVENT_STA_START:     /**< ESP32 station start */
+        logln("WiFi Set Hostname");
+        WiFi.setHostname(HOSTNAME);
+        break;
     case SYSTEM_EVENT_WIFI_READY:    /**< ESP32 WiFi ready */
     case SYSTEM_EVENT_SCAN_DONE:     /**< ESP32 finish scanning AP */
-    case SYSTEM_EVENT_STA_START:     /**< ESP32 station start */
     case SYSTEM_EVENT_STA_STOP:      /**< ESP32 station stop */
     case SYSTEM_EVENT_STA_CONNECTED: /**< ESP32 station connected to AP */
-    //case SYSTEM_EVENT_STA_DISCONNECTED:         /**< ESP32 station disconnected from AP */
     case SYSTEM_EVENT_STA_AUTHMODE_CHANGE: /**< the auth mode of AP connected by ESP32 station changed */
-    //case SYSTEM_EVENT_STA_GOT_IP:               /**< ESP32 station got IP from connected AP */
     case SYSTEM_EVENT_STA_LOST_IP:        /**< ESP32 station lost IP and the IP is reset to 0 */
     case SYSTEM_EVENT_STA_WPS_ER_SUCCESS: /**< ESP32 station wps succeeds in enrollee mode */
     case SYSTEM_EVENT_STA_WPS_ER_FAILED:  /**< ESP32 station wps fails in enrollee mode */
@@ -123,6 +125,7 @@ void WiFiEvent(WiFiEvent_t event)
     case SYSTEM_EVENT_ETH_DISCONNECTED:   /**< ESP32 ethernet phy link down */
     case SYSTEM_EVENT_ETH_GOT_IP:         /**< ESP32 ethernet got IP from connected AP */
     default:
+        logln("[WiFi-event] event: " + String(event));
         break;
     }
 }

@@ -69,10 +69,6 @@ void setup(void)
     // Init Beeper
     ledcSetup(TONE_CHANNEL, TONE_FREQ, 8);
 
-    Beep(TONE_FREQ, 75);
-    delay(75);
-    Beep(TONE_FREQ, 75);
-
     Display::setup();
 }
 //------------------------------------------------------------------------
